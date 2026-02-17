@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lilla Snigeln</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: linear-gradient(to bottom, #87CEEB 0%, #98D8A0 40%, #5A9E3F 60%, #4A7C34 100%);
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #scene {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Moln */
+  .cloud {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.85;
+    animation: drift linear infinite;
+  }
+  .cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+  }
+
+  @keyframes drift {
+    from { transform: translateX(100vw); }
+    to   { transform: translateX(-200px); }
+  }
+
+  /* Blommor */
+  .flower {
+    position: absolute;
+    bottom: 0;
+    font-size: 28px;
+    animation: sway 3s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes sway {
+    from { transform: rotate(-5deg); }
+    to   { transform: rotate(5deg); }
+  }
+
+  /* Snigelns slemspår */
+  .trail-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: rgba(180, 210, 230, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    transition: opacity 3s;
+  }
+
+  /* Snigeln */
+  #snail {
+    position: absolute;
+    font-size: 0;
+    transition: left 0.6s ease-out, top 0.6s ease-out;
+    z-index: 10;
+    filter: drop-shadow(2px 4px 3px rgba(0,0,0,0.25));
+    cursor: pointer;
+  }
+
+  .snail-body {
+    position: relative;
+    width: 90px;
+    height: 50px;
+  }
+
+  /* Kropp (fot) */
+  .foot {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 90px;
+    height: 22px;
+    background: #C4956A;
+    border-radius: 0 0 45px 45px / 0 0 22px 22px;
+    border-top: 2px solid #B0845C;
+  }
+
+  /* Snäcka */
+  .shell {
+    position: absolute;
+    bottom: 14px;
+    left: 18px;
+    width: 52px;
+    height: 44px;
+    background: radial-gradient(ellipse at 55% 55%, #D4894E, #A0623A);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    border: 2px solid #8B5230;
+  }
+  .shell::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    width: 30px;
+    height: 26px;
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 50%, #E0A060, #C07840);
+  }
+
+  /* Huvud */
+  .head {
+    position: absolute;
+    bottom: 10px;
+    left: -18px;
+    width: 28px;
+    height: 24px;
+    background: #C4956A;
+    border-radius: 50% 30% 40% 50%;
+  }
+
+  /* Ögon (antenner) */
+  .antenna {
+    position: absolute;
+    bottom: 30px;
+    width: 3px;
+    height: 18px;
+    background: #B0845C;
+    border-radius: 2px;
+  }
+  .antenna-left  { left: -12px; transform: rotate(15deg); }
+  .antenna-right { left: -2px;  transform: rotate(-15deg); }
+
+  .eye {
+    position: absolute;
+    top: -6px;
+    left: -3px;
+    width: 9px;
+    height: 9px;
+    background: white;
+    border-radius: 50%;
+    border: 1.5px solid #555;
+  }
+  .eye::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 4px;
+    height: 4px;
+    background: #222;
+    border-radius: 50%;
+  }
+
+  /* Mun */
+  .mouth {
+    position: absolute;
+    bottom: 12px;
+    left: -20px;
+    width: 8px;
+    height: 4px;
+    border-bottom: 2px solid #8B5230;
+    border-radius: 0 0 50% 50%;
+  }
+
+  /* Snigeln "äter" — animation */
+  #snail.eating .mouth {
+    animation: munch 0.3s ease-in-out 3;
+  }
+  @keyframes munch {
+    50% { height: 6px; width: 10px; left: -21px; }
+  }
+
+  /* Snigeln sover */
+  #snail.sleeping .eye::after {
+    width: 6px;
+    height: 2px;
+    top: 3px;
+    left: 1px;
+    border-radius: 0;
+    background: #555;
+  }
+  .zzz {
+    display: none;
+    position: absolute;
+    top: -25px;
+    left: 5px;
+    font-size: 14px;
+    color: #555;
+    animation: float-zzz 1.5s ease-in-out infinite;
+  }
+  #snail.sleeping .zzz { display: block; }
+  @keyframes float-zzz {
+    0%, 100% { transform: translateY(0) scale(1); opacity: 1; }
+    50%      { transform: translateY(-12px) scale(1.2); opacity: 0.5; }
+  }
+
+  /* Salladsblad (mat) */
+  .lettuce {
+    position: absolute;
+    font-size: 26px;
+    z-index: 5;
+    cursor: pointer;
+    animation: lettuce-appear 0.4s ease-out;
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.2));
+  }
+  @keyframes lettuce-appear {
+    from { transform: scale(0); }
+    to   { transform: scale(1); }
+  }
+
+  /* UI */
+  #ui {
+    position: fixed;
+    top: 12px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    z-index: 100;
+    padding: 0 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    background: rgba(255,255,255,0.9);
+    border: 2px solid #7A5C3E;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 15px;
+    color: #5A3E22;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active {
+    transform: scale(0.95);
+    background: #F5E6D0;
+  }
+
+  #status {
+    position: fixed;
+    bottom: 16px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 16px;
+    color: #3E2A14;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.6);
+    z-index: 100;
+    padding: 0 20px;
+  }
+
+  #happiness {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.85);
+    border-radius: 12px;
+    padding: 4px 14px;
+    font-size: 14px;
+    color: #5A3E22;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .heart {
+    position: absolute;
+    font-size: 20px;
+    pointer-events: none;
+    animation: heart-rise 1.2s ease-out forwards;
+    z-index: 50;
+  }
+  @keyframes heart-rise {
+    0%   { opacity: 1; transform: translateY(0) scale(0.5); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+  }
+</style>
+</head>
+<body>
+
+<div id="scene">
+  <div id="snail">
+    <div class="snail-body">
+      <div class="foot"></div>
+      <div class="shell"></div>
+      <div class="head"></div>
+      <div class="antenna antenna-left"><div class="eye"></div></div>
+      <div class="antenna antenna-right"><div class="eye"></div></div>
+      <div class="mouth"></div>
+      <span class="zzz">z Z z</span>
+    </div>
+  </div>
+</div>
+
+<div id="ui">
+  <button class="btn" ontouchstart="" onclick="dropLettuce()">Mata</button>
+  <button class="btn" ontouchstart="" onclick="petSnail()">Klappa</button>
+  <button class="btn" ontouchstart="" onclick="toggleSleep()">Sov</button>
+</div>
+
+<div id="happiness">Glädje: <span id="joy">50</span>%</div>
+<div id="status">Tryck på marken för att flytta snigeln!</div>
+
+<script>
+  const scene   = document.getElementById('scene');
+  const snail   = document.getElementById('snail');
+  const status  = document.getElementById('status');
+  const joySpan = document.getElementById('joy');
+
+  let snailX = window.innerWidth / 2 - 45;
+  let snailY = window.innerHeight * 0.6;
+  let joy = 50;
+  let sleeping = false;
+  let facingLeft = true;
+  const trail = [];
+
+  snail.style.left = snailX + 'px';
+  snail.style.top  = snailY + 'px';
+
+  // Moln
+  function createClouds() {
+    for (let i = 0; i < 4; i++) {
+      const c = document.createElement('div');
+      c.className = 'cloud';
+      const s = 40 + Math.random() * 60;
+      c.style.width  = s + 'px';
+      c.style.height  = (s * 0.5) + 'px';
+      c.style.top   = (5 + Math.random() * 20) + '%';
+      c.style.animationDuration = (25 + Math.random() * 30) + 's';
+      c.style.animationDelay    = (-Math.random() * 40) + 's';
+      scene.appendChild(c);
+    }
+  }
+
+  // Blommor
+  function createFlowers() {
+    const flowers = ['🌼', '🌸', '🌻', '🌺', '🌷', '🍄'];
+    for (let i = 0; i < 10; i++) {
+      const f = document.createElement('div');
+      f.className = 'flower';
+      f.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+      f.style.left = (Math.random() * 90 + 5) + '%';
+      f.style.bottom = (Math.random() * 15) + '%';
+      f.style.animationDelay = (Math.random() * 3) + 's';
+      scene.appendChild(f);
+    }
+  }
+
+  // Slemspår
+  function addTrail(x, y) {
+    const d = document.createElement('div');
+    d.className = 'trail-dot';
+    d.style.left = (x + 45) + 'px';
+    d.style.top  = (y + 48) + 'px';
+    scene.appendChild(d);
+    trail.push(d);
+    if (trail.length > 80) {
+      const old = trail.shift();
+      old.remove();
+    }
+    setTimeout(() => { d.style.opacity = '0'; }, 100);
+    setTimeout(() => { d.remove(); trail.splice(trail.indexOf(d), 1); }, 3200);
+  }
+
+  // Flytta snigeln
+  function moveSnail(tx, ty) {
+    if (sleeping) {
+      setStatus('Snigeln sover... väck den först!');
+      return;
+    }
+
+    // Begränsa inom skärmen
+    tx = Math.max(10, Math.min(window.innerWidth - 100, tx));
+    ty = Math.max(80, Math.min(window.innerHeight - 80, ty));
+
+    // Riktning
+    if (tx < snailX && !facingLeft) {
+      snail.style.transform = 'scaleX(1)';
+      facingLeft = true;
+    } else if (tx > snailX && facingLeft) {
+      snail.style.transform = 'scaleX(-1)';
+      facingLeft = false;
+    }
+
+    // Spår längs vägen
+    const dx = tx - snailX;
+    const dy = ty - snailY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const steps = Math.min(8, Math.max(2, Math.floor(dist / 30)));
+    for (let i = 1; i <= steps; i++) {
+      const ratio = i / steps;
+      setTimeout(() => {
+        addTrail(snailX + dx * ratio, snailY + dy * ratio);
+      }, ratio * 500);
+    }
+
+    snailX = tx;
+    snailY = ty;
+    snail.style.left = snailX + 'px';
+    snail.style.top  = snailY + 'px';
+
+    setStatus('Snigeln kryper...');
+    setTimeout(() => setStatus(''), 1200);
+  }
+
+  // Klicka/touch på marken
+  scene.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.btn') || e.target.closest('.lettuce') || e.target.closest('#snail')) return;
+    moveSnail(e.clientX - 45, e.clientY - 30);
+  });
+
+  // Klappa snigeln
+  function petSnail() {
+    if (sleeping) { toggleSleep(); return; }
+    addJoy(8);
+    spawnHeart();
+    setStatus('Snigeln gillar att bli klappad!');
+    snail.style.transition = 'transform 0.15s';
+    const base = facingLeft ? 'scaleX(1)' : 'scaleX(-1)';
+    snail.style.transform = base + ' scale(1.1)';
+    setTimeout(() => { snail.style.transform = base; }, 300);
+  }
+
+  // Mata snigeln
+  function dropLettuce() {
+    if (sleeping) {
+      setStatus('Snigeln sover... väck den först!');
+      return;
+    }
+
+    const leaf = document.createElement('div');
+    leaf.className = 'lettuce';
+    leaf.textContent = '🥬';
+
+    // Placera nära snigeln men lite slumpmässigt
+    const lx = snailX + (Math.random() - 0.5) * 160;
+    const ly = snailY + 30 + Math.random() * 60;
+    leaf.style.left = lx + 'px';
+    leaf.style.top  = ly + 'px';
+    scene.appendChild(leaf);
+
+    setStatus('Snigeln ser maten...');
+
+    // Snigeln kryper till maten
+    setTimeout(() => {
+      moveSnail(lx, ly - 30);
+      setTimeout(() => {
+        snail.classList.add('eating');
+        setStatus('Snigeln äter! Nam nam!');
+        addJoy(12);
+        setTimeout(() => {
+          leaf.remove();
+          snail.classList.remove('eating');
+          spawnHeart();
+        }, 1000);
+      }, 700);
+    }, 400);
+  }
+
+  // Sov-läge
+  function toggleSleep() {
+    sleeping = !sleeping;
+    if (sleeping) {
+      snail.classList.add('sleeping');
+      setStatus('Snigeln sover gott... 💤');
+      addJoy(5);
+    } else {
+      snail.classList.remove('sleeping');
+      setStatus('Snigeln vaknar!');
+    }
+  }
+
+  // Hjärt-animation
+  function spawnHeart() {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = '❤️';
+    h.style.left = (snailX + 20 + Math.random() * 30) + 'px';
+    h.style.top  = (snailY - 10) + 'px';
+    scene.appendChild(h);
+    setTimeout(() => h.remove(), 1300);
+  }
+
+  // Glädje
+  function addJoy(amount) {
+    joy = Math.min(100, Math.max(0, joy + amount));
+    joySpan.textContent = joy;
+  }
+
+  // Glädje minskar sakta
+  setInterval(() => {
+    if (!sleeping && joy > 0) {
+      joy = Math.max(0, joy - 1);
+      joySpan.textContent = joy;
+    }
+    if (joy === 0) setStatus('Snigeln är ledsen... ge den lite kärlek!');
+  }, 4000);
+
+  function setStatus(text) {
+    status.textContent = text;
+  }
+
+  createClouds();
+  createFlowers();
+</script>
+</body>
+</html>
