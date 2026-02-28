@@ -15,7 +15,21 @@ jobs:
         with:
           ref: ${{ inputs.target_branch || github.ref }}
 
+      - name: Detect package manager
+        id: detect
+        run: |
+          if [ -f bun.lockb ]; then
+            echo "pm=bun" >> $GITHUB_OUTPUT
+          else
+            echo "pm=npm" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Bun
+        if: steps.detect.outputs.pm == 'bun'
+        uses: oven-sh/setup-bun@v2
+
       - name: Setup Node.js
+        if: steps.detect.outputs.pm == 'npm'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -23,14 +37,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then
+          if [ "${{ steps.detect.outputs.pm }}" = "bun" ]; then
+            bun install
+          elif [ -f package-lock.json ]; then
             npm ci
           else
             npm install
           fi
 
+      - name: Set Vite base URL
+        if: steps.detect.outputs.pm == 'bun'
+        run: |
+          REPO_NAME="${{ github.event.repository.name }}"
+          for config in vite.config.ts vite.config.js; do
+            if [ -f "$config" ] && ! grep -q "base:" "$config"; then
+              sed -i "s/defineConfig({/defineConfig({ base: '\/$REPO_NAME\/',/" "$config"
+            fi
+          done
+
       - name: Build
-        run: npm run build
+        run: |
+          if [ "${{ steps.detect.outputs.pm }}" = "bun" ]; then
+            bun run build
+          else
+            npm run build
+          fi
 
       - name: Find and upload build output
         uses: actions/upload-artifact@v4
