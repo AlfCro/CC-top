@@ -29,8 +29,33 @@ jobs:
             npm install
           fi
 
+      # Test case 2: React CRA — set homepage before build so asset paths are correct
+      - name: Configure React CRA homepage
+        run: |
+          if node -e "const p=require('./package.json'); process.exit((p.dependencies||{})['react-scripts']||(p.devDependencies||{})['react-scripts']?0:1)" 2>/dev/null; then
+            echo "Detected React CRA (react-scripts)"
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              if (!pkg.homepage) {
+                pkg.homepage = 'https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}';
+                fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+                console.log('Set homepage:', pkg.homepage);
+              } else {
+                console.log('homepage already set:', pkg.homepage);
+              }
+            "
+          fi
+
       - name: Build
         run: npm run build
+
+      # Test case 2: CRA outputs to build/ — add .nojekyll so GitHub Pages serves _prefixed folders
+      - name: Add .nojekyll to build output
+        run: |
+          if [ -d build ]; then
+            touch build/.nojekyll
+          fi
 
       - name: Find and upload build output
         uses: actions/upload-artifact@v4
