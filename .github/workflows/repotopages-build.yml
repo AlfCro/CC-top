@@ -6,6 +6,10 @@ on:
         description: 'Branch to build (defaults to current ref)'
         required: false
         default: ''
+      repo_name:
+        description: 'Repository name for base-href (defaults to repo name)'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -15,22 +19,36 @@ jobs:
         with:
           ref: ${{ inputs.target_branch || github.ref }}
 
+      - name: Setup pnpm
+        if: hashFiles('pnpm-lock.yaml') != ''
+        uses: pnpm/action-setup@v3
+        with:
+          version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: ${{ hashFiles('pnpm-lock.yaml') != '' && 'pnpm' || 'npm' }}
 
       - name: Install dependencies
         run: |
-          if [ -f package-lock.json ]; then
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile
+          elif [ -f package-lock.json ]; then
             npm ci
           else
             npm install
           fi
 
       - name: Build
-        run: npm run build
+        run: |
+          if [ -f angular.json ] && [ -f pnpm-lock.yaml ]; then
+            REPO_NAME="${{ inputs.repo_name || github.event.repository.name }}"
+            pnpm ng build --configuration production --base-href /${REPO_NAME}/
+          else
+            npm run build
+          fi
 
       - name: Find and upload build output
         uses: actions/upload-artifact@v4
